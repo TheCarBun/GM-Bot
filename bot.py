@@ -140,7 +140,7 @@ async def on_message(message: discord.Message):
                         embed.description = f'You\'ve said GM **{user_data[index]["streak"]}** times in a row and a total of **{user_data[index]["count"]}** times!'
                     
                     else: # If Streak ends
-                        user_data[index]["streak"] = 0
+                        user_data[index]["streak"] = 1
                         embed.description = f'Your Streak has started again!\nYou\'ve said GM **{user_data[index]["count"]}** times in total!'
 
                         

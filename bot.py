@@ -315,132 +315,102 @@ async def lb(i: discord.Interaction):
 #     user_data[index]["level"] += 1
 #     embed.add_field(name=f"Congrats! You're now level {new_level}", value=" ")
 
+#=========Setup command
 
-# ---------- Bot Setup
+
 @bot.tree.command(name="setup", description="Setup GM Bot or View GM setup")
-async def setup(i: discord.Interaction):
+async def setup(i: discord.Interaction,
+                gm_channel: discord.TextChannel = None):
   if i.user.guild_permissions.administrator:
-    embed = Embed(title="GM Setup", color=Color.from_str("#deedff"))
+    embed = Embed(title="GM Setup", color=Color.from_str(gm_color))
     with open("gm_channel.json") as f:
       data = json.load(f)
     gm_channel_present = False
-    for x in range(len(data)):
+    for x in range(len(data)):  #Checks if server is already present in data
       if i.guild_id == data[x]["server_id"]:
         gm_channel_present = True
-        index = x
         break
 
-    if gm_channel_present:
-      embed.description = f'GM channel is set to {bot.get_channel(data[x]["gm_channel"]).mention}\n\nDo you want to change channel?'
-      await i.response.send_message(embed=embed, ephemeral=True)
+    if gm_channel_present:  #Shows channel if already setup
+
       yes_button = Button(label="Yes", style=discord.ButtonStyle.green)
       no_button = Button(label="No", style=discord.ButtonStyle.red)
-
-      async def yes_callback(yes_intr: discord.Interaction):
-
-        channel_ch = [
-          discord.SelectOption(label=channel.name, value=str(channel.id))
-          for channel in yes_intr.guild.text_channels
-        ]
-        select_menu = Select(options=channel_ch,
-                             placeholder="Select a Channel")
-
-        async def menu_callback(intr: discord.Interaction):
-          gm_channel = bot.get_channel(int(select_menu.values[0]))
-          await i.edit_original_response(embed=embed, view=None)
-          embed.description = "Setting up GM Channel..."
-          embed.set_thumbnail(
-            url=
-            "https://i.pinimg.com/originals/82/a1/47/82a1470954fd17ae803d1a6b1d6b0bca.gif"
-          )
-          await intr.response.send_message(embed=embed, ephemeral=True)
-          await asyncio.sleep(3)
-
-          data[index]["gm_channel"] = int(select_menu.values[0])
-          try:
-            with open("gm_channel.json", "w") as g:
-              json.dump(data, g)
-          except:
-            embed.set_thumbnail(url=None)
-            embed.description = "Unable to set GM channel"
-            await intr.edit_original_response(embed=embed)
-          else:
-            embed.set_thumbnail(url=None)
-            embed.description = f"GM Channel is set.\nMake sure the bot has permission to send messages in {gm_channel.mention}"
-            await intr.edit_original_response(embed=embed)
-
-        select_menu.callback = menu_callback
-        button_view = View()
-        button_view.add_item(select_menu)
-        embed.description = "Select new GM Channel from the dropdown"
-        await i.edit_original_response(embed=embed, view=button_view)
-
-      async def no_callback(no_intr: discord.Interaction):
-        await i.edit_original_response(embed=embed, view=None)
-        embed.description = "Command Terminated!"
-        await no_intr.response.send_message(embed=embed, ephemeral=True)
-
-      yes_button.callback = yes_callback
-      no_button.callback = no_callback
 
       views = View()
       views.add_item(yes_button)
       views.add_item(no_button)
 
-      await i.edit_original_response(embed=embed, view=views)
+      embed.description = f'GM channel is set to {bot.get_channel(data[x]["gm_channel"]).mention}\n Do you want to change the channel?'
 
-    else:
+      await i.response.send_message(embed=embed, view=views, ephemeral=True)
 
-      embed.description = "GM channel is not set up for this server. Follow the instructions below to setup."
-      embed.add_field(
-        name="Add bot to channel",
-        value=
-        "`Edit Channel` > `Permissions` > `Add member or roles` > `Select bot`\n",
-        inline=False)
-      embed.add_field(name="Enter GM Channel from the Dropdown list",
-                      value=" ",
-                      inline=False)
-      await i.response.send_message(embed=embed, ephemeral=True)
-      channel_ch = [
-        discord.SelectOption(label=channel.name, value=str(channel.id))
-        for channel in i.guild.text_channels
-      ]
-      select_menu = Select(options=channel_ch)
-
-      async def menu_callback(intr: discord.Interaction):
-
-        await i.edit_original_response(embed=embed, view=None)
-        gm_channel = bot.get_channel(int(select_menu.values[0]))
-        embed.clear_fields()
-        embed.description = "Setting up GM Channel..."
+      async def yes_callback(yes_intr: discord.Interaction):
+        embed.description = "Setting up..."
         embed.set_thumbnail(
           url=
           "https://i.pinimg.com/originals/82/a1/47/82a1470954fd17ae803d1a6b1d6b0bca.gif"
         )
-        await intr.response.send_message(embed=embed, ephemeral=True)
+        await i.edit_original_response(embed=embed)
+        embed.set_thumbnail(url=None)
         await asyncio.sleep(3)
-
-        new_data = {"server_id": i.guild_id, "gm_channel": gm_channel.id}
-        data.append(new_data)
         try:
-          with open("gm_channel.json", "w") as g:
-            json.dump(data, g, indent=4)
+          del data[x]
+          with open("gm_channel.json", "w") as f:
+            json.dump(data, f)
+
         except:
-          embed.description = "Unable to set GM channel"
-          await intr.edit_original_response(embed=embed)
+          embed.description = "Unable to remove server"
+          await i.edit_original_response(embed=embed, ephemeral=True)
         else:
-          embed.description = f"GM Channel is set.\nMake sure the bot has permission to send messages in {gm_channel.mention}"
-          embed.set_thumbnail(url=None)
-          await intr.edit_original_response(embed=embed)
+          embed.description = "Channel has been removed!\nTo set a new channel run `/setup` command again"
+          await i.edit_original_response(embed=embed, view=None)
 
-      select_menu.callback = menu_callback
-      button_view = View()
-      button_view.add_item(select_menu)
-      await i.edit_original_response(embed=embed, view=button_view)
+      async def no_callback(no_intr: discord.Interaction):
+        embed.description = "Command Terminated!"
+        await i.edit_original_response(embed=embed, view=None)
 
-  else:
-    await i.response.send_message("**Missing Permissions:** Administrator",
-                                  ephemeral=True)
+      yes_button.callback = yes_callback
+      no_button.callback = no_callback
+
+    else:  #Shows setup guide if not setup
+      if gm_channel == None:
+        embed.description = "GM channel is not set up for this server. Follow the instructions below to setup."
+        embed.add_field(
+          name="Add bot to channel",
+          value=
+          "`Edit Channel` > `Permissions` > `Add member or roles` > `Select bot`\n",
+          inline=False)
+        embed.add_field(
+          name="Enter GM Channel in the command",
+          value=
+          "`/setup` `gm_channel:#channel-name`\neg. `/setup` `gm_channel:#gm-chat`",
+          inline=False)
+        await i.response.send_message(embed=embed, ephemeral=True)
+        return
+
+      embed.description = "Setting up GM Channel..."
+      embed.set_thumbnail(
+        url=
+        "https://i.pinimg.com/originals/82/a1/47/82a1470954fd17ae803d1a6b1d6b0bca.gif"
+      )
+      await i.response.send_message(embed=embed, ephemeral=True)
+      embed.set_thumbnail(url=None)
+      await asyncio.sleep(3)
+
+      new_data = {"server_id": i.guild_id, "gm_channel": gm_channel.id}
+      data.append(new_data)
+      try:  #Adds new data to JSON
+        with open("gm_channel.json", "w") as g:
+          json.dump(data, g)
+      except:
+        embed.description = "Unable to set GM channel"
+        await i.edit_original_response(embed=embed)
+      else:
+        embed.description = f"GM Channel is set.\nMake sure the bot has permission to send messages in {gm_channel.mention}"
+        await i.edit_original_response(embed=embed)
+        print("New Guild Added")
+  else:  #If missing perms
+    await i.response.send_message("**Missing Permissions:** Administrator")
 
 
 #---------- Reset Command
@@ -449,7 +419,7 @@ async def reset(i: discord.Interaction):
   if i.user.guild_permissions.administrator:
     embed = Embed(title="GM Reset",
                   description="Searching...",
-                  color=Color.from_str("#ff0063"))
+                  color=Color.from_str(gm_color))
     embed.set_thumbnail(
       url=
       "https://i.pinimg.com/originals/82/a1/47/82a1470954fd17ae803d1a6b1d6b0bca.gif"
@@ -546,7 +516,7 @@ async def ping(ctx: commands.Context):
   end_time = message.created_at
   latency = (end_time - start_time).total_seconds() * 1000
   em.title = "Pong!"
-  em.color = Color.from_str("#ff3396")
+  em.color = Color.from_str(gm_color)
   em.description = f"Latency: {latency:.2f}ms \nAPI Latency: {round(bot.latency * 1000, 2)}ms"
   em.set_thumbnail(
     url=
@@ -574,18 +544,14 @@ async def help(i: discord.Interaction):
     emd.add_field(name="/setup",
                   value="Setup GM Bot or View GM Channel",
                   inline=False)
-    emd.add_field(name="@GM Bot ping",
-                  value="Send a message anywhere in the server as BunChan",
+    emd.add_field(name="/reset",
+                  value="Reset all stats and data",
                   inline=False)
+    emd.add_field(name="@GM Bot ping", value="Check bot latency", inline=False)
     emd.set_thumbnail(url=gm_logo)
     await i.channel.send(embed=emd)
 
 
 #----run token---
-try:
-  keep_alive()
-  bot.run(os.getenv('token'))
-except:
-  os.system('kill 1')
-
+bot.run(os.getenv('token'))
 #---------------------------

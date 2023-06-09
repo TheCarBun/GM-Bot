@@ -18,6 +18,7 @@ with open("config.json") as f:
 ad_id = roles["admin_ids"]
 gm_logo = roles["gm_logo"]
 gm_color = roles["gm_color"]
+bot_master = roles["bot_master"]
 
 #Log Channels :
 on_log_ch = roles["on_log_ch"]
@@ -145,11 +146,10 @@ async def on_message(message: discord.Message):
         else:  #If 20 hours have passed till last said GM
           user_data[index]["count"] += 1
           user_data[index]["last_used"] = msg_time.isoformat()
-          streak = user_data[index]["streak"]
           level = user_data[index]["level"]
 
-          if time_diff >= timedelta(hours=24) and time_diff < timedelta(
-              hours=47, minutes=59):  #If Streak Continues
+          if time_diff >= timedelta(hours=20) and time_diff < timedelta(
+              hours=39, minutes=59):  #If Streak Continues
             user_data[index]["streak"] += 1
             embed.description = f'You\'ve said GM **{user_data[index]["streak"]}** times in a row and a total of **{user_data[index]["count"]}** times!'
 
@@ -222,10 +222,10 @@ async def rank(i: discord.Interaction, user: discord.User = None):
   if user == None:  # If no user is entered, it will return stats of the user who invoked command
     user = i.user
 
-  embed = Embed(title=f"{user.name}'s GM Rank", color=Color.from_str(gm_color))
+  embed = Embed(title=f"{user.name}'s GM Rank", color=Color.from_str(gm_color)) #initial embed
   embed.set_thumbnail(url=user.avatar.url)
 
-  with open("gm_channel.json") as gm:
+  with open("gm_channel.json") as gm: #loading gm data
     gm_data = json.load(gm)
 
   gm_channel_present = False  # Checks if the server is present in data
@@ -257,9 +257,9 @@ async def rank(i: discord.Interaction, user: discord.User = None):
     if user_not_present:  # If user is not present
       embed.description = f"{user.display_name} has not started saying GM yet."
     else:  #If user is present it will display all stats
-      count = user_data[index]["count"]
-      streak = user_data[index]["streak"]
-      level = user_data[index]["level"]
+      count = sorted_data[index]["count"]
+      streak = sorted_data[index]["streak"]
+      level = sorted_data[index]["level"]
       embed.description = f"**LEVEL : **{level}\n**Total GMs : **{count}\n**Current Streak : **{streak}"
       embed.set_author(name=f"Rank #{x+1}", icon_url=user.avatar.url)
     await i.response.send_message(embed=embed)
@@ -283,27 +283,29 @@ async def lb(i: discord.Interaction):
   server_id = i.guild.id
   server_data = [ud for ud in user_data
                  if ud['server_id'] == server_id]  #Sorts data for the server
+  sorted_data = sorted(server_data, key=lambda x: x["count"],
+                       reverse=True)  #sorts server data into top 10 by count
 
-  data_len = len(server_data)
-  if data_len < 10 and data_len != 0:  #Checks if file has less than 10 users
-    sorted_data = server_data
-  elif data_len == 0:  #If there are no users yet
+  data_len = len(sorted_data)
+  if data_len > 10:  #Checks if file has more than 10 users
+    data_len = 10
+  elif data_len == 0:
     embed.add_field(name="No records yet",
                     value="Setup GM bot with `/setup` command")
-  else:
-    # Sort top 10 users by count in descending order
-    sorted_data = sorted(server_data, key=lambda x: x["count"],
-                         reverse=True)[:10]
-    data_len = 10
 
   # Add each user to the leaderboard
   for x in range(data_len):  # runs upto 10 if there are 10 or more users
     user_name = bot.get_user(sorted_data[x]["user_id"])
     level = sorted_data[x]["level"]
     count = sorted_data[x]["count"]
-    embed.add_field(name=f"{x+1}. {user_name.display_name}",
-                    value=f'Level: {level}\nTotal GM: {count}',
-                    inline=False)
+    try:
+      embed.add_field(name=f"{x+1}. {user_name.display_name}",
+                      value=f'Level: {level}\nTotal GM: {count}',
+                      inline=False)
+    except:
+      embed.add_field(name=f'{x+1}. {sorted_data[x]["user_id"]}',
+                      value=f'Level: {level}\nTotal GM: {count}',
+                      inline=False)
 
   await i.response.send_message(embed=embed)  #Displays leaderboard
 
@@ -496,13 +498,19 @@ async def reset(i: discord.Interaction):
 @bot.tree.command(name="server-list",
                   description="Shows list of all the servers the bot is in")
 async def server_list(i: discord.Interaction):
-  servers = bot.guilds  #Gets all the servers the bot is in
-  embed = Embed(title="Server list",
-                description=f"The bot is in {len(servers)} servers",
-                color=Color.from_str(gm_color))
-  for server in servers:  #Adds them all to separate fields
-    embed.add_field(name=f"{server.name}", value=f"{server.id}", inline=False)
-  await i.response.send_message(embed=embed)
+  if i.user.id == bot_master:
+    servers = bot.guilds  #Gets all the servers the bot is in
+    embed = Embed(title="Server list",
+                  description=f"The bot is in {len(servers)} servers",
+                  color=Color.from_str(gm_color))
+    for server in servers:  #Adds them all to separate fields
+      embed.add_field(name=f"{server.name}",
+                      value=f"{server.id}",
+                      inline=False)
+    await i.response.send_message(embed=embed)
+  else:
+    await i.response.send_message(
+      "This command can be only used by the bot dev.")
 
 
 #PingPong!
@@ -553,5 +561,10 @@ async def help(i: discord.Interaction):
 
 
 #----run token---
-bot.run(os.getenv('token'))
+try:
+  keep_alive()
+  bot.run(os.getenv('token'))
+except:
+  os.system('kill 1')
+
 #---------------------------

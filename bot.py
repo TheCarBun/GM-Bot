@@ -512,6 +512,22 @@ async def server_list(i: discord.Interaction):
     await i.response.send_message(
       "This command can be only used by the bot dev.")
 
+#Bot Updates
+@bot.tree.command(name="updates", description="Shows the recent bot update")
+async def updates(i: discord.Interaction):
+  channel = bot.get_channel(1116620807821611058)
+  msg = await channel.fetch_message(channel.last_message_id)
+  try:
+    img = msg.attachments[0].url
+  except:
+    img = None
+
+  em = discord.Embed(description=f"## PATCH NOTES\n\n{msg.content}",
+                     color=discord.Color.from_str(gm_color))
+  em.set_image(url=img)
+
+  await i.response.send_message(embed=em)
+
 
 #PingPong!
 @bot.command()

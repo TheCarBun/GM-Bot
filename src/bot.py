@@ -61,7 +61,7 @@ async def on_message(message: discord.Message):
   embed.set_thumbnail(url=user.avatar.url)
 
   # initializing variables ...
-  with open("gm_channel.json") as gmchjson:  #JSON Where GM Channel is stored
+  with open("src/gm_channel.json") as gmchjson:  #JSON Where GM Channel is stored
     gm_ch_data = json.load(gmchjson)
 
   gm_json_len = len(gm_ch_data)
@@ -210,7 +210,7 @@ async def rank(i: discord.Interaction, user: discord.User = None):
   embed = Embed(title=f"{user.name}'s GM Rank", color=Color.from_str(gm_color)) #initial embed
   embed.set_thumbnail(url=user.avatar.url)
 
-  with open("gm_channel.json") as gm: #loading gm data
+  with open("src/gm_channel.json") as gm: #loading gm data
     gm_data = json.load(gm)
 
   gm_channel_present = False  # Checks if the server is present in data
@@ -310,7 +310,7 @@ async def setup(i: discord.Interaction,
                 gm_channel: discord.TextChannel = None):
   if i.user.guild_permissions.administrator:
     embed = Embed(title="GM Setup", color=Color.from_str(gm_color))
-    with open("gm_channel.json") as f:
+    with open("src/gm_channel.json") as f:
       data = json.load(f)
     gm_channel_present = False
     for x in range(len(data)):  #Checks if server is already present in data
@@ -342,7 +342,7 @@ async def setup(i: discord.Interaction,
         await asyncio.sleep(3)
         try:
           del data[x]
-          with open("gm_channel.json", "w") as f:
+          with open("src/gm_channel.json", "w") as f:
             json.dump(data, f)
 
         except:
@@ -387,7 +387,7 @@ async def setup(i: discord.Interaction,
       new_data = {"server_id": i.guild_id, "gm_channel": gm_channel.id}
       data.append(new_data)
       try:  #Adds new data to JSON
-        with open("gm_channel.json", "w") as g:
+        with open("src/gm_channel.json", "w") as g:
           json.dump(data, g)
       except:
         embed.description = "Unable to set GM channel"
@@ -417,7 +417,7 @@ async def reset(i: discord.Interaction):
     embed.set_thumbnail(url=None)
 
     server_id = i.guild_id
-    with open("gm_channel.json") as f:
+    with open("src/gm_channel.json") as f:
       data = json.load(f)
     for x in range(len(data)):
       server_found = False
@@ -434,7 +434,7 @@ async def reset(i: discord.Interaction):
         embed.clear_fields()
         try:
           del data[x]
-          with open("gm_channel.json", "w") as f:
+          with open("src/gm_channel.json", "w") as f:
             json.dump(data, f)
           with open("gm.json") as f:
             gm_data = json.load(f)
@@ -516,6 +516,50 @@ async def updates(i: discord.Interaction):
   em.set_image(url=img)
 
   await i.response.send_message(embed=em)
+
+
+#Broadcast Bot Updates to all GM Channels
+@bot.tree.command(name="broadcast", description="Broadcast bot updates to all GM channels")
+async def broadcast(i:discord.Interaction):
+  if i.user.id == bot_master: #If command user is the bot master
+    await i.response.send_message("`(-)` Initiating broadcast....") # Visual jff
+    channel = bot.get_channel(1116620807821611058) # Bot update channel on support server
+    msg = await channel.fetch_message(channel.last_message_id) # Fetches the last message on update channel
+    try:
+      img = msg.attachments[0].url #Fetches image if available
+    except:
+      img = None
+    em = discord.Embed(description=f"## BOT UPDATES\n\n{msg.content}",
+                      color=discord.Color.from_str(gm_color))
+    em.set_image(url=img) #Update Embed
+
+    await i.edit_original_response(content="`(\)` Opening database `gm_channel.json` ...") #Visual jff
+
+    with open("src\gm_channel.json") as f: #Opening database
+      data = json.load(f)
+
+    await i.edit_original_response(content=f"`(|)` Sending Updates to {len(data)} servers...") #Visual jff
+
+    for x in range(len(data)): #Going through all channels
+      ch = bot.get_channel(data[x]["gm_channel"])
+
+      try: #Checks if the bot can fetch the server
+        server_name = (bot.get_guild(data[x]['server_id'])).name
+      except:
+        server_name = data[x]['server_id']
+
+      try: #Sends embed to the channel
+        await ch.send(embed=em) #Sending embed to gm channel
+      except:
+        await i.channel.send(f"Unable to find server. `ID: {server_name}`")
+      else:
+        await i.channel.send(f"Message was sent to channel `#{ch.name}` of server `{server_name}`.")
+    await i.edit_original_response(content=f"`(/)` Send updates to all {len(data)} servers")
+  
+  else:
+    await i.response.send_message("You are not allowed to use this command!")
+  
+
 
 
 #PingPong!

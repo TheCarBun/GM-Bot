@@ -16,7 +16,7 @@ class AdminCommands(commands.Cog):
     """Setup GM Bot or view the setup process"""
     if ctx.author.guild_permissions.administrator:
       embed = Embed(title="GM Setup", color=Color.from_str(gm_color))
-      with open("D:\VSCodePrograms\python\Discord Bot\GM Bot\database\gm_channel.json") as f:
+      with open("database/gm_channel.json") as f:
         data = json.load(f)
       gm_channel_present = False
       for x in range(len(data)):  #Checks if server is already present in data
@@ -46,7 +46,7 @@ class AdminCommands(commands.Cog):
           await asyncio.sleep(3)
           try:
             del data[x]
-            with open("D:\VSCodePrograms\python\Discord Bot\GM Bot\database\gm_channel.json", "w") as f:
+            with open("database/gm_channel.json", "w") as f:
               json.dump(data, f)
 
           except:
@@ -67,39 +67,46 @@ class AdminCommands(commands.Cog):
         if gm_channel == None:
           embed.description = "GM channel is not set up for this server. Follow the instructions below to setup."
           embed.add_field(
-              name="Add bot to channel",
+              name="Add bot to gm channel",
               value=
-              "`Edit Channel` > `Permissions` > `Add member or roles` > `Select bot`\n",
+              "`Edit Channel` > `Permissions` > `Add member or roles` > `Select GM Bot`\n",
               inline=False)
           embed.add_field(
               name="Enter GM Channel in the command",
               value=
-              "`/setup` `gm_channel:#channel-name`\neg. `/setup` `gm_channel:#gm-chat`",
+              "`/setup` `gm_channel:#channel-name`\neg. ```/setup gm_channel:#gm-chat```",
               inline=False)
           await ctx.interaction.response.send_message(embed=embed, ephemeral=True)
           return
 
         embed.description = "Setting up GM Channel..."
         embed.set_thumbnail(
-            url=
-            "https://i.pinimg.com/originals/82/a1/47/82a1470954fd17ae803d1a6b1d6b0bca.gif"
+            url=loading_gif
         )
         await ctx.interaction.response.send_message(embed=embed, ephemeral=True)
         embed.set_thumbnail(url=None)
         await asyncio.sleep(3)
 
-        new_data = {"server_id": ctx.interaction.guild_id, "gm_channel": gm_channel.id}
+        new_data = {
+          "server_id": ctx.interaction.guild_id, 
+          "gm_channel": gm_channel.id
+          }
         data.append(new_data)
         try:  #Adds new data to JSON
-          with open("D:\VSCodePrograms\python\Discord Bot\GM Bot\database\gm_channel.json", "w") as g:
+          with open("database/gm_channel.json", "w") as g:
             json.dump(data, g)
         except:
           embed.description = "Unable to set GM channel"
           await ctx.interaction.edit_original_response(embed=embed)
         else:
-          embed.description = f"GM Channel is set.\nMake sure the bot has permission to send messages in {gm_channel.mention}"
-          await ctx.interaction.edit_original_response(embed=embed)
-          await log_new_guild(self.bot, ctx.author.guild)
+          try: #Trying to send message in gm-chat
+            await gm_channel.send(content= ctx.author.mention, embed = await success_embed()) #sent to gm-chat
+          except: #if message didn't go through
+            await ctx.interaction.edit_original_response(embed= await failed_embed(gm_channel)) #sent to setup channel
+          else: #if message successfully went through
+            embed.description = f"GM Channel is set to {gm_channel.mention}"
+            await ctx.interaction.edit_original_response(embed=embed) #sent to setup channel
+            await log_new_guild(self.bot, ctx.author.guild)
     else:  #If missing perms
       await ctx.interaction.response.send_message("**Missing Permissions:** Administrator")
 
@@ -116,7 +123,7 @@ class AdminCommands(commands.Cog):
       embed.set_thumbnail(url=None)
 
       server_id = ctx.guild.id
-      with open("D:\VSCodePrograms\python\Discord Bot\GM Bot\database\gm_channel.json") as f:
+      with open("database/gm_channel.json") as f:
         data = json.load(f)
       for x in range(len(data)):
         server_found = False
@@ -133,13 +140,13 @@ class AdminCommands(commands.Cog):
           embed.clear_fields()
           try:
             del data[x]
-            with open("D:\VSCodePrograms\python\Discord Bot\GM Bot\database\gm_channel.json", "w") as f:
+            with open("database/gm_channel.json", "w") as f:
               json.dump(data, f)
-            with open("../database/gm.json") as f:
+            with open("database/gm.json") as f:
               gm_data = json.load(f)
             gm_data = [x for x in gm_data if x["server_id"] != server_id]
 
-            with open("../database/gm.json", "w") as g:
+            with open("database/gm.json", "w") as g:
               json.dump(gm_data, g, indent=4)
 
           except:

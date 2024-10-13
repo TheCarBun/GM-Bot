@@ -22,7 +22,7 @@ class GmSystem(commands.Cog):
     gm_msg = message.content.lower()  # Gets message
     embed = await gm_embed(user) # Base embed
 
-    with open("D:\VSCodePrograms\python\Discord Bot\GM Bot\database\gm_channel.json") as gmchjson:  #JSON Where GM Channel is stored
+    with open("database/gm_channel.json") as gmchjson:  #JSON Where GM Channel is stored
       gm_ch_data = json.load(gmchjson)
 
     gm_json_len = len(gm_ch_data)
@@ -38,7 +38,7 @@ class GmSystem(commands.Cog):
           gm_ch_data[gm_index]["gm_channel"])  # initializes GM Channel
 
       if message.channel == gm_ch and "gm" in gm_msg:  # Checks channel and message
-        with open("D:\VSCodePrograms\python\Discord Bot\GM Bot\database\gm.json") as gmjson:  # Opens JSON where it stores user stats
+        with open("database/gm.json") as gmjson:  # Opens JSON where it stores user stats
           user_data = json.load(gmjson)
 
         data_len = len(user_data)
@@ -64,7 +64,7 @@ class GmSystem(commands.Cog):
           }
           user_data.append(new_data)  #adds new data to JSON
           try:
-            with open("D:\VSCodePrograms\python\Discord Bot\GM Bot\database\gm.json", "w") as g:
+            with open("database/gm.json", "w") as g:
               user_data = json.dump(user_data, g)  #Dumps all data to JSON
           except:
             print("Dumping error")
@@ -136,7 +136,7 @@ class GmSystem(commands.Cog):
           # Assigning Level to embed
           embed.set_author(name=f"Level {level}", icon_url=gm_logo)
 
-          with open("D:\VSCodePrograms\python\Discord Bot\GM Bot\database\gm.json", "w") as file:
+          with open("database/gm.json", "w") as file:
             json.dump(user_data, file)  #Stores all new data
         await message.channel.send(embed=embed)
     await self.bot.process_commands(message

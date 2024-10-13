@@ -7,8 +7,11 @@ import os, traceback
 from dotenv import load_dotenv
 load_dotenv()
 
+intents = discord.Intents.default()
+intents.message_content = True
+intents.guilds = True
 bot = commands.Bot(command_prefix=commands.when_mentioned,
-                   intents=discord.Intents.all())
+                   intents=intents)
 
 
 #---------------------------------
@@ -49,6 +52,26 @@ async def on_ready():
 async def on_guild_join(guild:discord.Guild):
   await log_on_join(bot, guild) #log guild join
 
+# On Guild Leave ------
+@bot.event
+async def on_guild_remove(guild:discord.Guild):
+#   #delete server from gm 
+#   updated_gm_ch = []
+#   with open('database/gm_channel.json') as f:
+#     server_data = json.load(f)
+#   updated_gm_ch = [server for server in server_data if server['server_id'] != guild.id]
+
+
+#   #delete gm data
+#   updated_gm = []
+#   with open('database/gm.json') as f:
+#     gm_data = json.load(f)
+#   for data in gm_data:
+#     if data['server_id'] == guild.id:
+#       updated_gm =
+
+  await log_on_leave(bot, guild)
+
 # -------------------------------------
 
 #PingPong!
@@ -61,10 +84,10 @@ async def ping(i:discord.Interaction):
   start_time = i.created_at
   message = await i.channel.send(embed=em)  #sending initial Embed
   end_time = message.created_at
-  latency = (end_time - start_time).total_seconds()
+  latency = (end_time - start_time).total_seconds() * 100
   em.title = "Pong!"
   em.color = Color.from_str(gm_color)
-  em.description = f"Latency: {latency:.2f}ms \nAPI Latency: {round(bot.latency, 2)}ms"
+  em.description = f"Latency: {latency:.2f}ms \nAPI Latency: {round(bot.latency*100, 2)}ms"
   em.set_thumbnail(
       url=
       "https://i.pinimg.com/originals/a9/68/27/a96827aa75c09ba6c6dcf38b8f6daa90.gif"
@@ -84,4 +107,4 @@ async def help(i: discord.Interaction):
     emd = await admin_help_embed(i.user)
     await i.channel.send(embed=emd)
 
-bot.run(os.getenv('token'))
+bot.run(os.getenv('TOKEN'))

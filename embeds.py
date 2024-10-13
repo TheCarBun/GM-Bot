@@ -5,6 +5,13 @@ from config import *
 
 #============================================
 
+#-------------- Embed Template -------------
+async def embed_template():
+  embed = Embed(
+    color=Color.from_str(gm_color)
+  )
+  return embed
+
 #----------------- On Ready -----------------
 async def on_ready_embed(bot:commands.Bot):
   embed = Embed(
@@ -47,6 +54,24 @@ async def ping_embed():
 async def rank_embed(user:discord.User):
   embed= Embed(title=f"{user.name}'s GM Rank", color=Color.from_str(gm_color))
   embed.set_thumbnail(url=user.avatar.url)
+  return embed
+
+#--------------- Setup Embeds ----------------
+
+#Successfully sent message to #gm-chat
+async def success_embed():
+  embed = Embed(title="GM Setup Success",
+                  description="This channel is successfully set as GM Chat\nTry saying `GM`.",
+                  color=Color.from_str(gm_color))
+  embed.set_thumbnail(url=gm_logo)
+  return embed
+
+#Failed to send message to #gm-chat
+async def failed_embed(gm_channel:discord.TextChannel):
+  embed = Embed(title="GM Setup Error!",
+                  description=f"GM Bot does not have permission to send message on {gm_channel.mention}\nPlease add GM Bot to the channel and enable the following permissions for it:\n- View Channel\n- Send Messages\n- Read Message History",
+                  color=Color.from_str(gm_color))
+  embed.set_thumbnail(url=gm_logo)
   return embed
 
 #--------------- Reset Embed ----------------
@@ -106,7 +131,8 @@ async def on_join_embed(guild:discord.Guild):
     color=Color.from_str(gm_color)
   )
   embed.add_field(name="Server ID", value=f"{guild.id}", inline=False)
-  embed.add_field(name="Server Owner", value=f"**@{guild.owner.name}**\nID: ```<@{guild.owner_id}>```", inline=False)
+  if guild.owner is not None:
+    embed.add_field(name="Server Owner", value=f"**@{guild.owner.name}**\nID: ```<@{guild.owner_id}>```", inline=False)
   embed.add_field(name="Created at", value=f"<t:{int(guild.created_at.timestamp())}:f>", inline=False)
   embed.add_field(name="Member Count", value=f"{guild.member_count}", inline=False)
 
@@ -132,6 +158,30 @@ async def on_join_embed(guild:discord.Guild):
 
   return embed
 
+#------------ On Server Leave -----------
+async def left_guild_embed(guild:discord.Guild):
+  embed = Embed(
+  title="Bot left a Server",
+  description=f"**Server Name:** {guild.name}\n**Description:** {guild.description}",
+  color=Color.from_str(gm_color)
+  )
+  embed.add_field(name="Server ID", value=f"{guild.id}", inline=False)
+  if guild.owner is not None:
+    embed.add_field(name="Server Owner", value=f"**@{guild.owner.name}**\nID: ```<@{guild.owner_id}>```", inline=False)
+  embed.add_field(name="Created at", value=f"<t:{int(guild.created_at.timestamp())}:f>", inline=False)
+  embed.add_field(name="Member Count", value=f"{guild.member_count}", inline=False)
+
+  # Checks if Server Banner URL is available
+  if guild.banner is not None:
+    embed.set_image(url=guild.banner.url)
+
+  # Checks if Server Icon URL is available
+  if guild.icon is not None:
+    embed.set_thumbnail(url=guild.icon.url)
+  
+  return embed
+
+
 #------------ New Guild Log ------------
 async def new_guild_embed(guild:discord.Guild):
   embed = Embed(
@@ -139,7 +189,8 @@ async def new_guild_embed(guild:discord.Guild):
     color= Color.from_str(gm_color)
   )
   embed.add_field(name="Server", value=f"{guild.name}", inline=False)
-  embed.add_field(name="Server Owner", value=f"{guild.owner.name}", inline=False)
+  if guild.owner is not None:
+    embed.add_field(name="Server Owner", value=f"{guild.owner.name}", inline=False)
   # Checks if Server Banner URL is available
   if guild.banner is not None:
     embed.set_image(url=guild.banner.url)

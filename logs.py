@@ -8,6 +8,11 @@ async def log_on_join(bot:commands.Bot, guild:discord.Guild):
   print(f"Bot has joined new server: {guild.name}") # print to console
   await log_channel.send(embed=await on_join_embed(guild))
 
+async def log_on_leave(bot:commands.Bot, guild:discord.Guild):
+  log_channel = bot.get_channel(log_ch)
+  print(f"Bot left a Guild: {guild.name}") # print to console
+  await log_channel.send(embed=await left_guild_embed(guild))
+
 async def log_exception(bot:commands.Bot, exception:Exception):
   log_channel = bot.get_channel(log_ch)
   print(f"Bot raised an Exception: {exception}") # print to console

@@ -7,6 +7,7 @@ from config import *
 from logs import *
 from embeds import *
 import json, asyncio
+from datetime import datetime
 
 class GmCommands(commands.Cog):
   def __init__(self, bot:commands.Bot):
@@ -21,7 +22,7 @@ class GmCommands(commands.Cog):
 
     embed = await rank_embed(user)
 
-    with open("D:\VSCodePrograms\python\Discord Bot\GM Bot\database\gm_channel.json") as gm:
+    with open("database/gm_channel.json") as gm:
       gm_data = json.load(gm)
 
     gm_channel_present = False  # Checks if the server is present in data
@@ -32,7 +33,7 @@ class GmCommands(commands.Cog):
 
     if gm_channel_present:  #If server is present, means bot is setup
 
-      with open("D:\VSCodePrograms\python\Discord Bot\GM Bot\database\gm.json") as file:
+      with open("database/gm.json") as file:
         user_data = json.load(file)
 
       server_id = ctx.guild.id
@@ -71,7 +72,7 @@ class GmCommands(commands.Cog):
     """Shows top 10 members of the server"""
     embed = Embed(title="GM Leaderboard :", color=Color.from_str(gm_color))
 
-    with open("D:\VSCodePrograms\python\Discord Bot\GM Bot\database\gm.json") as file:
+    with open("database/gm.json") as file:
       user_data = json.load(file)
 
     server_id = ctx.guild.id
@@ -99,6 +100,43 @@ class GmCommands(commands.Cog):
         embed.add_field(name=f'{x+1}. {sorted_data[x]["user_id"]}',
                         value=f'Total GM: {count}',
                         inline=False)
+
+    await ctx.interaction.response.send_message(embed=embed)  #Displays leaderboard
+
+# --------------- Streaks Leaderboard Command
+  @commands.hybrid_command(name="streaks-leaderboard", with_app_command=True)
+  async def streaks_lb(self, ctx:commands.Context):
+    """Shows top 10 members with highest streaks in the server"""
+    embed = Embed(title="GM Streaks Leaderboard :", color=Color.from_str(gm_color))
+
+    with open("database/gm.json") as file:
+      user_data = json.load(file)
+
+    server_data = [ud for ud in user_data
+                 if ud['server_id'] == ctx.guild.id and ud['streak'] > 0]  #Sorts data for the server
+    sorted_data = sorted(server_data, key=lambda x: x["streak"],
+                        reverse=True)  #sorts server data into top 10 by count
+
+    data_len = len(sorted_data)
+    if data_len > 10:  #Checks if file has more than 10 users
+      data_len = 10
+    elif data_len == 0:
+      embed.add_field(name="No records yet",
+                      value="Setup GM bot with `/setup` command")
+
+    # Add each user to the leaderboard
+    for x in range(data_len):  # runs upto 10 if there are 10 or more users
+      user_name = self.bot.get_user(sorted_data[x]["user_id"])
+      streak = sorted_data[x]["streak"]
+      last_used = datetime.fromisoformat(sorted_data[x]["last_used"])
+    try:  #Checks if the user can be mentioned
+      embed.add_field(name=f"{x+1}. {user_name.display_name}",
+                      value=f'Streaks: {streak}\nLast GM Time: `<t:{int(last_used.timestamp())}:R>`',
+                      inline=False)
+    except:  #displays ID if can't mention
+      embed.add_field(name=f'{x+1}. {sorted_data[x]["user_id"]}',
+                      value=f'Streaks: {streak}\nLast GM Time: <t:{int(last_used.timestamp())}:R>',
+                      inline=False)
 
     await ctx.interaction.response.send_message(embed=embed)  #Displays leaderboard
 

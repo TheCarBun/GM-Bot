@@ -5,6 +5,7 @@ from config import *
 from logs import *
 from embeds import *
 import json, asyncio
+from datetime import datetime, timedelta
 
 class MasterCommands(commands.Cog):
   def __init__(self, bot:commands.Bot):
@@ -18,26 +19,89 @@ class MasterCommands(commands.Cog):
     if ctx.author.id == bot_master:
       servers = self.bot.guilds  #Gets all the servers the bot is in
       embed = await server_list_embed(servers)
-      total_users = 0
+      total_members = 0
       for server in servers:  #Adds them all to separate fields
-        total_users = total_users + server.member_count
+        total_members = total_members + server.member_count
         embed.add_field(
             name=f"{server.name}",
             value=
             f"Server ID `{server.id}`\nMember Count: `{server.member_count}`",
             inline=False)
-      embed.description = f"# The bot is in `{len(servers)}` servers with total user count of `{total_users}`."
+      embed.description = f"# The bot is in `{len(servers)}` servers with total member count of `{total_members}`."
       embed.set_thumbnail(url=gm_logo)
       await ctx.interaction.response.send_message(embed=embed)
     else:
       await ctx.interaction.response.send_message(
           "This command can be only used by the bot dev.")
+    
+  #--------- Count of Users in a Server
+  @commands.hybrid_command(name="users-count", with_app_command=True)
+  async def users_count(self, ctx:commands.Context, server_id:str):
+    """Shows count of users in a server from server id
 
+    Args:
+        ctx (commands.Context): discord context
+        server_id (int): Server ID
+    """
+    if ctx.author.id == bot_master:
+      embed = await embed_template()
+
+      with open('database/gm_channel.json') as f:
+        gm_channel_data = json.load(f)
+      server_found = False
+      for server in gm_channel_data:
+        if server['server_id'] == int(server_id):
+          server_found = True
+
+      if server_found:
+        with open('database/gm.json') as file:
+          gm_data = json.load(file)
+        
+        # users who have used GM Bot in the server
+        user_count = 0
+        active_users = 0
+        for user in gm_data:
+          if user['server_id'] == int(server_id):
+            user_count += 1
+
+            # Active users(48 hours)
+            last_used = datetime.fromisoformat(user['last_used'])
+            time_diff = datetime.now() - last_used
+            if time_diff < timedelta(hours=47, minutes=59,
+                                  seconds=59):  #For users who said GM in the last 48 hours
+              active_users += 1
+        guild = self.bot.get_guild(server_id)
+        embed.title = "Users in Server"
+        try:
+          embed.add_field(
+            name='Server Details', 
+            value=f'Server Name: {guild.name}\nServer ID: `{guild.id}`\nOwner: {guild.owner.name}'
+            )
+        except:
+          embed.add_field(name="Error", value="Cannot fetch server details")
+        try:
+          embed.add_field(
+            name="Guild Details", 
+            value=f"Total Members: {guild.member_count} \nTotal Users: {user_count} \nActive Users: {active_users}"
+            )
+        except:
+          embed.add_field(
+            name="Error",
+            value="Cannot fetch guild details"
+          )
+        await ctx.interaction.response.send_message(embed=embed)
+      else:
+        embed.title= "Server Not Found"
+        await ctx.interaction.response.send_message(embed=embed)
+    else:
+      await ctx.interaction.response.send_message("This command can be only used by the bot dev.")
 
   #Broadcast Bot Updates to all GM Channels
   @commands.hybrid_command(name="broadcast", with_app_command=True)
   async def broadcast(self, ctx:commands.Context):
-    """Broadcasts Updates to all GM Channels"""
+    """Broadcasts Updates to all GM Channels
+    Add:
+    - Find servers from bot.guilds to send the broadcast to"""
     if ctx.author.id == bot_master:
       await ctx.interaction.response.send_message("(-) Initiating broadcast....")
       channel = self.bot.get_channel(1116620807821611058)
@@ -49,13 +113,15 @@ class MasterCommands(commands.Cog):
       em = await broadcast_embed(msg, img)
 
       try:
-          with open("./database/gm_channel.json") as f:
+          with open("database/gm_channel.json") as f:
             data = json.load(f)
       except:
           await ctx.channel.send("Unable to open database!")
 
       await ctx.interaction.edit_original_response(content="(\) Opening")
 
+      error_count = 0
+      success_count = 0
       for x in range(len(data)):
         ch = self.bot.get_channel(data[x]["gm_channel"])
 
@@ -67,12 +133,14 @@ class MasterCommands(commands.Cog):
         try:
           await ch.send(embed=em)
         except:
+          error_count += 1
           await ctx.channel.send(f"Unable to find server. `ID: {server_name}`")
         else:
+          success_count += 1
           await ctx.channel.send(
               f"Message was sent to channel `#{ch.name}` of server `{server_name}`."
           )
-      await ctx.interaction.edit_original_response(content="(✅) Completed")
+      await ctx.interaction.edit_original_response(content=f"(✅) Completed\nSent to {success_count} servers out of {success_count+error_count} servers")
 
     else:
       await ctx.interaction.response.send_message("You are not allowed to use this command!")

@@ -2,6 +2,8 @@ import discord
 from discord.ext import commands
 from discord import Embed, Color
 from config import *
+from math import ceil
+import json
 
 #============================================
 
@@ -83,11 +85,48 @@ async def reset_embed():
   return embed
 
 #--------------- Server List Embed ----------------
-async def server_list_embed(server_count:int):
-  embed = Embed(title="SERVER LIST",
-                  description=f"The bot is in {server_count} servers",
-                  color=Color.from_str(gm_color))
-  return embed
+
+# Helper function to create paginated embeds for Server List
+async def create_paginated_embeds(servers):
+    pages = []
+    chunk_size = 10  # display 10 servers per page
+    total_pages = ceil(len(servers) / chunk_size)  # Calculate total pages
+    
+    for page_num in range(total_pages):
+        embed = discord.Embed(title="GM Bot - Server List", color=discord.Color.from_str(gm_color))
+        embed.set_thumbnail(url=gm_logo)
+        
+        # Slice the server list into chunks of 10 for each page
+        server_chunk = servers[page_num * chunk_size:(page_num + 1) * chunk_size]
+        total_members = 0
+        total_users = 0
+        
+        for server in server_chunk:
+            total_members += server.member_count
+            try:
+                with open('database/gm.json') as f:
+                    gm_data = json.load(f)
+                user_count = sum(1 for user in gm_data if user['server_id'] == server.id)
+                total_users += user_count
+            except Exception as e:
+                print(f"Error: {e}")  # Handle your error logging here
+
+            # Add the server details to the embed field
+            embed.add_field(
+                name=f"{server.name}", 
+                value=(
+                    f"Server ID `{server.id}`\n"
+                    f"Member Count: `{server.member_count}`\n"
+                    f"User Count: `{user_count}`"
+                ),
+                inline=False
+            )
+
+        embed.description = f"**Total Servers:** `{len(servers)}`\n**Total Members:** `{total_members}`\n**Total Users:** `{total_users}`"
+        embed.set_footer(text=f"Page {page_num + 1}/{total_pages}")
+        pages.append(embed)
+
+    return pages
 
 #--------------- Broadcast Embed ----------------
 async def broadcast_embed(msg:discord.Message, img:str):

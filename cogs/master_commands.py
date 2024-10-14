@@ -11,28 +11,47 @@ class MasterCommands(commands.Cog):
   def __init__(self, bot:commands.Bot):
     self.bot = bot
 
-  #---------- Server List Command
-  # (shows how many servers the bot is in)
+  # Command to list the servers with pagination
   @commands.hybrid_command(name="server-list", with_app_command=True)
-  async def server_list(self, ctx:commands.Context):
+  async def server_list(self, ctx: commands.Context):
     """Shows all servers that use GM Bot"""
     if ctx.author.id == bot_master:
-      servers = self.bot.guilds  #Gets all the servers the bot is in
-      embed = await server_list_embed(len(servers))
-      total_members = 0
-      for server in servers:  #Adds them all to separate fields
-        total_members = total_members + server.member_count
-        embed.add_field(
-            name=f"{server.name}",
-            value=
-            f"Server ID `{server.id}`\nMember Count: `{server.member_count}`",
-            inline=False)
-      embed.description = f"# The bot is in `{len(servers)}` servers with total member count of `{total_members}`."
-      embed.set_thumbnail(url=gm_logo)
-      await ctx.interaction.response.send_message(embed=embed)
+      servers = self.bot.guilds  # Gets all the servers the bot is in
+      pages = await create_paginated_embeds(servers)
+      
+      # If there's only one page, just send it
+      if len(pages) == 1:
+        await ctx.interaction.response.send_message(embed=pages[0])
+      else:
+        current_page = 0
+
+        # Define the buttons for pagination
+        class PaginationView(View):
+          def __init__(self):
+            super().__init__()
+            self.current_page = current_page
+
+          @discord.ui.button(label="Previous", style=discord.ButtonStyle.green)
+          async def previous_button(self, interaction: discord.Interaction, button: Button):
+            if self.current_page > 0:
+              self.current_page -= 1
+              await interaction.response.defer()
+              await interaction.message.edit(embed=pages[self.current_page], view=self)
+
+          @discord.ui.button(label="Next", style=discord.ButtonStyle.green)
+          async def next_button(self, interaction: discord.Interaction, button: Button):
+            if self.current_page < len(pages) - 1:
+              self.current_page += 1
+              await interaction.response.defer()
+              await interaction.message.edit(embed=pages[self.current_page], view=self)
+
+        # Send the first page with the buttons for navigation
+        view = PaginationView()
+        await ctx.interaction.response.send_message(embed=pages[0], view=view)
     else:
       await ctx.interaction.response.send_message(
-          "This command can be only used by the bot dev.")
+          "This command can only be used by the bot dev."
+      )
     
   #--------- Count of Users in a Server
   @commands.hybrid_command(name="users-count", with_app_command=True)
@@ -46,6 +65,7 @@ class MasterCommands(commands.Cog):
     server_id = int(server_id)
     if ctx.author.id == bot_master:
       embed = await embed_template()
+      embed.set_thumbnail(url=gm_logo)
 
       with open('database/gm_channel.json') as f:
         gm_channel_data = json.load(f)
@@ -75,7 +95,8 @@ class MasterCommands(commands.Cog):
         try:
           embed.add_field(
             name='Server Details', 
-            value=f'Server Name: {guild.name}\nServer ID: `{guild.id}`\nOwner ID: {guild.owner.global_name}'
+            value=f'Server Name: {guild.name}\nServer ID: `{guild.id}`\nOwner ID: {guild.owner.global_name}',
+            inline=False
             )
         except Exception as e:
           embed.add_field(name="Error", value=f"Cannot fetch server details: {e}")

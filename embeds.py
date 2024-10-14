@@ -25,10 +25,10 @@ async def on_ready_embed(bot:commands.Bot):
   return embed
 
 #----------------- On Exception -----------------
-async def on_exception_embed(exception:Exception):
+async def on_exception_embed(message:str):
   embed = Embed(
       title="Bot raised an Exception",
-      description= exception,
+      description= message,
       color=Color.red(),
   )
   return embed
@@ -83,9 +83,9 @@ async def reset_embed():
   return embed
 
 #--------------- Server List Embed ----------------
-async def server_list_embed(servers):
+async def server_list_embed(server_count:int):
   embed = Embed(title="SERVER LIST",
-                  description=f"The bot is in {len(servers)} servers",
+                  description=f"The bot is in {server_count} servers",
                   color=Color.from_str(gm_color))
   return embed
 
@@ -159,7 +159,7 @@ async def on_join_embed(guild:discord.Guild):
   return embed
 
 #------------ On Server Leave -----------
-async def left_guild_embed(guild:discord.Guild):
+async def left_guild_embed(guild:discord.Guild, user_count:int):
   embed = Embed(
   title="Bot left a Server",
   description=f"**Server Name:** {guild.name}\n**Description:** {guild.description}",
@@ -170,6 +170,7 @@ async def left_guild_embed(guild:discord.Guild):
     embed.add_field(name="Server Owner", value=f"**@{guild.owner.name}**\nID: ```<@{guild.owner_id}>```", inline=False)
   embed.add_field(name="Created at", value=f"<t:{int(guild.created_at.timestamp())}:f>", inline=False)
   embed.add_field(name="Member Count", value=f"{guild.member_count}", inline=False)
+  embed.add_field(name="User Count", value=f"{user_count} users")
 
   # Checks if Server Banner URL is available
   if guild.banner is not None:

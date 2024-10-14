@@ -18,7 +18,7 @@ class MasterCommands(commands.Cog):
     """Shows all servers that use GM Bot"""
     if ctx.author.id == bot_master:
       servers = self.bot.guilds  #Gets all the servers the bot is in
-      embed = await server_list_embed(servers)
+      embed = await server_list_embed(len(servers))
       total_members = 0
       for server in servers:  #Adds them all to separate fields
         total_members = total_members + server.member_count
@@ -43,6 +43,7 @@ class MasterCommands(commands.Cog):
         ctx (commands.Context): discord context
         server_id (int): Server ID
     """
+    server_id = int(server_id)
     if ctx.author.id == bot_master:
       embed = await embed_template()
 
@@ -50,7 +51,7 @@ class MasterCommands(commands.Cog):
         gm_channel_data = json.load(f)
       server_found = False
       for server in gm_channel_data:
-        if server['server_id'] == int(server_id):
+        if server['server_id'] == server_id:
           server_found = True
 
       if server_found:
@@ -61,24 +62,23 @@ class MasterCommands(commands.Cog):
         user_count = 0
         active_users = 0
         for user in gm_data:
-          if user['server_id'] == int(server_id):
+          if user['server_id'] == server_id:
             user_count += 1
 
             # Active users(48 hours)
             last_used = datetime.fromisoformat(user['last_used'])
             time_diff = datetime.now() - last_used
-            if time_diff < timedelta(hours=47, minutes=59,
-                                  seconds=59):  #For users who said GM in the last 48 hours
+            if time_diff < timedelta(hours=48):  #For users who said GM in the last 48 hours
               active_users += 1
         guild = self.bot.get_guild(server_id)
         embed.title = "Users in Server"
         try:
           embed.add_field(
             name='Server Details', 
-            value=f'Server Name: {guild.name}\nServer ID: `{guild.id}`\nOwner: {guild.owner.name}'
+            value=f'Server Name: {guild.name}\nServer ID: `{guild.id}`\nOwner ID: {guild.owner.global_name}'
             )
-        except:
-          embed.add_field(name="Error", value="Cannot fetch server details")
+        except Exception as e:
+          embed.add_field(name="Error", value=f"Cannot fetch server details: {e}")
         try:
           embed.add_field(
             name="Guild Details", 

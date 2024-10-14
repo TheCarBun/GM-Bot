@@ -10,6 +10,7 @@ load_dotenv()
 intents = discord.Intents.default()
 intents.message_content = True
 intents.guilds = True
+intents.members = True
 bot = commands.Bot(command_prefix=commands.when_mentioned,
                    intents=intents)
 
@@ -42,9 +43,11 @@ async def on_ready():
     print("(-_-) Exception raised when Syncing commands: ",e)
     await log_exception(bot, e)
 
-# @bot.event
-# async def on_error(ctx, event):
-#   await log_exception(bot, event)
+@bot.event
+async def on_error(event, *args, **kwargs):
+  message = args[0] #Gets the message object
+  print(traceback.format_exc())
+  await log_exception(bot, message)
 
 
 # On Guild Join -------
@@ -55,22 +58,41 @@ async def on_guild_join(guild:discord.Guild):
 # On Guild Leave ------
 @bot.event
 async def on_guild_remove(guild:discord.Guild):
-#   #delete server from gm 
-#   updated_gm_ch = []
-#   with open('database/gm_channel.json') as f:
-#     server_data = json.load(f)
-#   updated_gm_ch = [server for server in server_data if server['server_id'] != guild.id]
+  try:
+    #delete server from gm 
+    with open('database/gm_channel.json') as f:
+      server_data = json.load(f)
+    updated_gm_ch = [server for server in server_data if server['server_id'] != guild.id]
+  except Exception as e:
+    print(f"Error: {e}")
+  
+  try:
+    #dump to gm_channel.json
+    with open('database/gm_channel.json', 'w') as fl:
+      json.dump(updated_gm_ch, fl)
+  except Exception as e:
+    print(f"Error writing file gm_channel.json : {e}")
 
 
-#   #delete gm data
-#   updated_gm = []
-#   with open('database/gm.json') as f:
-#     gm_data = json.load(f)
-#   for data in gm_data:
-#     if data['server_id'] == guild.id:
-#       updated_gm =
+  try:
+    #delete gm data
+    with open('database/gm.json') as f:
+      gm_data = json.load(f)
+    old_user_count = len(gm_data)
+    updated_gm = [user for user in gm_data if user["server_id"] != guild.id]
+    new_user_count = len(updated_gm)
+  except Exception as e:
+    print(f"Error: {e}")
+  
+  try:
+    #dump to update
+    with open('database/gm.json', 'w') as fl:
+      json.dump(updated_gm, fl)
+  except Exception as e:
+    print(f"Error writing file gm.json : {e}")
 
-  await log_on_leave(bot, guild)
+  user_count = old_user_count - new_user_count
+  await log_on_leave(bot, guild, user_count)
 
 # -------------------------------------
 

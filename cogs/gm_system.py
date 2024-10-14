@@ -84,8 +84,7 @@ class GmSystem(commands.Cog):
           embed.set_footer(text="GM everyday to continue your streak!",
                           icon_url=gm_logo)
 
-          if time_diff < timedelta(hours=gm_time-1, minutes=59,
-                                  seconds=59):  #If 20 hours have not passed yet
+          if time_diff < timedelta(hours=gm_time):  #If 20 hours have not passed yet
             rem_time = timedelta(hours=gm_time) - time_diff
             rem_time_h = int(rem_time.total_seconds() // 3600)
             rem_time_m = int((rem_time.total_seconds() % 3600) // 60)
@@ -96,7 +95,7 @@ class GmSystem(commands.Cog):
             level = user_data[index]["level"]
 
             if time_diff >= timedelta(hours=gm_time) and time_diff < timedelta(
-                hours=streak_time-1, minutes=59):  #If Streak Continues
+                hours=streak_time):  #If Streak Continues
               user_data[index]["streak"] += 1
               embed.description = f'You\'ve said GM **{user_data[index]["streak"]}** times in a row and a total of **{user_data[index]["count"]}** times!'
 

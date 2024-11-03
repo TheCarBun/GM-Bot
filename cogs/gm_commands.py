@@ -13,10 +13,10 @@ class GmCommands(commands.Cog):
   def __init__(self, bot:commands.Bot):
     self.bot = bot
 
-# Rank Command
-  @commands.hybrid_command(name='rank', with_app_command=True)
+# info Command
+  @commands.hybrid_command(name='info', with_app_command=True)
   async def rank(self, ctx:commands.Context, user: discord.User = None):
-    """Check your rank or any other member's rank"""
+    """Check your info or any other member's info"""
     if user == None:  # If no user is entered, it will return stats of the user who invoked command
       user = ctx.author
 
@@ -25,7 +25,7 @@ class GmCommands(commands.Cog):
     with open("database/gm_channel.json") as gm:
       gm_data = json.load(gm)
 
-    gm_channel_present = False  # Checks if the server is present in data
+    gm_channel_present = False  # To check if the server is present in data
     for x in range(len(gm_data)):
       if gm_data[x]["server_id"] == ctx.guild.id:
         gm_channel_present = True
@@ -56,8 +56,9 @@ class GmCommands(commands.Cog):
       else:  #If user is present it will display all stats
         count = sorted_data[index]["count"]
         streak = sorted_data[index]["streak"]
+        last_used = int(datetime.fromisoformat(sorted_data[index]["last_used"]).timestamp())
         level = sorted_data[index]["level"]
-        embed.description = f"**LEVEL : **{level}\n**Total GMs : **{count}\n**Current Streak : **{streak}"
+        embed.description = f"**LEVEL:** {level}\n**Total GMs:** {count}\n**Current Streak:** {streak}\n**Last GM:** <t:{last_used}:R>"
         embed.set_author(name=f"Rank #{x+1}", icon_url=gm_logo)
       await ctx.interaction.response.send_message(embed=embed)
 

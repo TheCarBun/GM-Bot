@@ -53,6 +53,13 @@ class GmSystem(commands.Cog):
           else:
             user_not_present = True
 
+        view = discord.ui.View()
+        vote_button = discord.ui.Button(
+          label="Vote for Us on top.gg!",  # Button label
+          style=discord.ButtonStyle.link,  # Link style for external URL
+          url="https://top.gg/bot/1105338570178310145/vote"  # Replace with your bot's top.gg vote URL
+          )
+
         if user_not_present:  # If user is not present in JSON
           new_data = {
               "server_id": user_guild,
@@ -71,9 +78,10 @@ class GmSystem(commands.Cog):
           else:
             await log_new_user(self.bot, user, message.guild)
 
-            embed.description = f'This is your first GM!\nSend GM everyday to maintain your streak!!'
+            embed.description = f'This is your first GM!\nSend GM everyday to maintain your streak!! Click the button below to support us by voting on top.gg!'
             embed.color = discord.Color.from_str(gm_color)
             embed.set_author(name="Level 1", icon_url=gm_logo)
+            view.add_item(vote_button)  # Add button to the view
 
         else:  # If user is present in JSON
 
@@ -93,15 +101,16 @@ class GmSystem(commands.Cog):
             user_data[index]["count"] += 1
             user_data[index]["last_used"] = msg_time.isoformat()
             level = user_data[index]["level"]
-
+            view.add_item(vote_button)  # Add button to the view
+            
             if time_diff >= timedelta(hours=gm_time) and time_diff < timedelta(
                 hours=streak_time):  #If Streak Continues
               user_data[index]["streak"] += 1
-              embed.description = f'You\'ve said GM **{user_data[index]["streak"]}** times in a row and a total of **{user_data[index]["count"]}** times!'
+              embed.description = f'Thank you for saying GM! 🌞\nYou\'ve said GM **{user_data[index]["streak"]}** times in a row and a total of **{user_data[index]["count"]}** times! \nClick the button below to support us by voting on top.gg!'
 
             else:  # If Streak ends
               user_data[index]["streak"] = 1
-              embed.description = f'Your Streak has started again!\nYou\'ve said GM **{user_data[index]["count"]}** times in total!'
+              embed.description = f'Thank you for saying GM! 🌞\nYour Streak has started again!\nYou\'ve said GM **{user_data[index]["count"]}** times in total! \nClick the button below to support us by voting on top.gg!'
 
             count = user_data[index]["count"]
             if count == 3:
@@ -137,7 +146,7 @@ class GmSystem(commands.Cog):
 
           with open("database/gm.json", "w") as file:
             json.dump(user_data, file)  #Stores all new data
-        await message.channel.send(embed=embed)
+        await message.channel.send(embed=embed, view=view)
     await self.bot.process_commands(message
                               )  # To enable the bot to read other commands
 

@@ -149,24 +149,20 @@ async def broadcast_embed(msg:discord.Message, img:str):
 #--------------- Help Embed ----------------
 async def help_embed():
   embed = Embed(title="GM Help", color=Color.from_str(gm_color))
-  embed.add_field(name="/help", value="Shows you this", inline=False)
-  embed.add_field(name="/rank", value="Shows your GM stats", inline=False)
-  embed.add_field(name="/leaderboard",
-               value="Shows top 10 Members who say GM",
-               inline=False)
+  embed.add_field(name="/info", value="Shows your GM stats", inline=False)
+  embed.add_field(name="/leaderboard", value="Shows top 10 Members who say GM", inline=False)
+  embed.add_field(name="/streaks-leaderboard", value="Shows top 10 with highest streaks in the server", inline=False)
+  embed.add_field(name="/updates", value="Shows most recent bot update", inline=False)
   embed.add_field(name="/ping", value="Check bot latency", inline=False)
+  embed.add_field(name="/help", value="Shows you this", inline=False)
   embed.set_thumbnail(url=gm_logo)
   return embed
 
 #--------------- Admin Help Embed ----------------
 async def admin_help_embed(user:discord.User):
   embed = Embed(title="Admin Commands", color=Color.from_str(gm_color))
-  embed.add_field(name="/setup",
-                value="Setup GM Bot or View GM Channel",
-                inline=False)
-  embed.add_field(name="/reset",
-                value="Reset all stats and data",
-                inline=False)
+  embed.add_field(name="/setup", value="Setup GM Bot or View GM Channel", inline=False)
+  embed.add_field(name="/reset", value="Reset all stats and data", inline=False)
   if user.avatar is not None:
     embed.set_thumbnail(url=user.avatar.url)
   return embed

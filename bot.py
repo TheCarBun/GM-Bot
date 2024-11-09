@@ -118,15 +118,6 @@ async def ping(i:discord.Interaction):
   await i.edit_original_response(embed=em)
 
 
-# ------- Help command --------
-# bot.remove_command('help')
-@bot.tree.command(name="help", description="Help Command")
-async def help(i: discord.Interaction):
-  em = await help_embed()
-  await i.response.send_message(embed=em)
-
-  if i.user.guild_permissions.administrator:  #Checks if user is an Admin
-    emd = await admin_help_embed(i.user)
-    await i.channel.send(embed=emd)
+bot.remove_command('help') #remove help command
 
 bot.run(os.getenv('TOKEN'))

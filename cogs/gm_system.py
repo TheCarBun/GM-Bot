@@ -55,9 +55,9 @@ class GmSystem(commands.Cog):
 
         view = discord.ui.View()
         vote_button = discord.ui.Button(
-          label="Vote for Us on top.gg!",  # Button label
-          style=discord.ButtonStyle.link,  # Link style for external URL
-          url="https://top.gg/bot/1105338570178310145/vote"  # Replace with your bot's top.gg vote URL
+          label="Vote for Us on top.gg!",
+          style=discord.ButtonStyle.link,
+          url="https://top.gg/bot/1105338570178310145/vote"
           )
 
         if user_not_present:  # If user is not present in JSON

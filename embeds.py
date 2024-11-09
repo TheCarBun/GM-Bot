@@ -58,6 +58,16 @@ async def rank_embed(user:discord.User):
   embed.set_thumbnail(url=user.avatar.url)
   return embed
 
+#--------------- Vote Embed ----------------
+async def vote_embed():
+  embed= Embed(
+    title="✨ Support us on top.gg!", 
+    url="https://top.gg/bot/1105338570178310145/vote",
+    description= "Your support means the world to us! 💗\nEvery vote on top.gg motivates us to keep improving and adding new features. \nThank you for being such an amazing user!!",
+    color=Color.from_str(gm_color))
+  embed.set_image(url="https://imgur.com/9czgbOd.png")
+  return embed
+
 #--------------- Setup Embeds ----------------
 
 #Successfully sent message to #gm-chat

@@ -15,7 +15,7 @@ class GmCommands(commands.Cog):
 
 # info Command
   @commands.hybrid_command(name='info', with_app_command=True)
-  async def rank(self, ctx:commands.Context, user: discord.User = None):
+  async def info(self, ctx:commands.Context, user: discord.User = None):
     """Check your info or any other member's info"""
     if user == None:  # If no user is entered, it will return stats of the user who invoked command
       user = ctx.author
@@ -157,6 +157,23 @@ class GmCommands(commands.Cog):
     em.set_image(url=img)
 
     await ctx.interaction.response.send_message(embed=em)
+
+  @commands.hybrid_command(name="vote", with_app_command=True)
+  async def vote(self, ctx:commands.Context):
+    """Displays a link to Vote for the bot
+
+    Args:
+        ctx (commands.Context): message context
+    """
+    embed = await vote_embed()
+    view = discord.ui.View()
+    vote_button = discord.ui.Button(
+      label="Vote for Us on top.gg!",
+      style=discord.ButtonStyle.link,
+      url="https://top.gg/bot/1105338570178310145/vote"
+      )
+    view.add_item(vote_button)
+    await ctx.interaction.response.send_message(embed=embed, view=view)
 
 
 async def setup(bot:commands.Bot):

@@ -37,7 +37,7 @@ async def on_exception_embed(message:str):
 
 #--------------- GM Embed ----------------
 async def gm_embed(user:discord.User):
-  embed = discord.Embed(title=f"Good Morning {user.name}!! 🌞",
+  embed = discord.Embed(title=f"Good Morning {user.display_name if user.display_name else user.name}!!",
                         color=discord.Color.from_str(gm_color))  #Base Embed
   if user.avatar is not None:
     embed.set_thumbnail(url=user.avatar.url)

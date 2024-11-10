@@ -132,7 +132,7 @@ class GmCommands(commands.Cog):
       last_used = datetime.fromisoformat(sorted_data[x]["last_used"])
       try:  #Checks if the user can be mentioned
         embed.add_field(name=f"{x+1}. {user_name.display_name}",
-                        value=f'Streaks: {streak}\nLast GM Time: `<t:{int(last_used.timestamp())}:R>`',
+                        value=f'Streaks: {streak}\nLast GM Time: <t:{int(last_used.timestamp())}:R>',
                         inline=False)
       except:  #displays ID if can't mention
         embed.add_field(name=f'{x+1}. {sorted_data[x]["user_id"]}',

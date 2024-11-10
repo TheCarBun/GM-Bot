@@ -114,7 +114,7 @@ class GmCommands(commands.Cog):
       user_data = json.load(file)
 
     server_data = [ud for ud in user_data
-                 if ud['server_id'] == ctx.guild.id and ud['streak'] > 0]  #Sorts data for the server
+                 if ud['server_id'] == ctx.guild.id]  #Sorts data for the server
     sorted_data = sorted(server_data, key=lambda x: x["streak"],
                         reverse=True)  #sorts server data into top 10 by count
 
@@ -130,14 +130,14 @@ class GmCommands(commands.Cog):
       user_name = self.bot.get_user(sorted_data[x]["user_id"])
       streak = sorted_data[x]["streak"]
       last_used = datetime.fromisoformat(sorted_data[x]["last_used"])
-    try:  #Checks if the user can be mentioned
-      embed.add_field(name=f"{x+1}. {user_name.display_name}",
-                      value=f'Streaks: {streak}\nLast GM Time: `<t:{int(last_used.timestamp())}:R>`',
-                      inline=False)
-    except:  #displays ID if can't mention
-      embed.add_field(name=f'{x+1}. {sorted_data[x]["user_id"]}',
-                      value=f'Streaks: {streak}\nLast GM Time: <t:{int(last_used.timestamp())}:R>',
-                      inline=False)
+      try:  #Checks if the user can be mentioned
+        embed.add_field(name=f"{x+1}. {user_name.display_name}",
+                        value=f'Streaks: {streak}\nLast GM Time: `<t:{int(last_used.timestamp())}:R>`',
+                        inline=False)
+      except:  #displays ID if can't mention
+        embed.add_field(name=f'{x+1}. {sorted_data[x]["user_id"]}',
+                        value=f'Streaks: {streak}\nLast GM Time: <t:{int(last_used.timestamp())}:R>',
+                        inline=False)
 
     await ctx.interaction.response.send_message(embed=embed)  #Displays leaderboard
 

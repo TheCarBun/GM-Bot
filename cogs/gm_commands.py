@@ -13,7 +13,7 @@ class GmCommands(commands.Cog):
   def __init__(self, bot:commands.Bot):
     self.bot = bot
 
-# info Command
+# Info Command ----
   @commands.hybrid_command(name='info', with_app_command=True)
   async def info(self, ctx:commands.Context, user: discord.User = None):
     """Check your info or any other member's info"""
@@ -141,7 +141,7 @@ class GmCommands(commands.Cog):
 
     await ctx.interaction.response.send_message(embed=embed)  #Displays leaderboard
 
-  #Bot Updates
+  # Bot Updates ----
   @commands.hybrid_command(name="updates", with_app_command=True)
   async def updates(self, ctx:commands.Context):
     """Shows most recent bot update"""
@@ -158,6 +158,7 @@ class GmCommands(commands.Cog):
 
     await ctx.interaction.response.send_message(embed=em)
 
+  # Vote command ----
   @commands.hybrid_command(name="vote", with_app_command=True)
   async def vote(self, ctx:commands.Context):
     """Displays a link to Vote for the bot
@@ -175,6 +176,31 @@ class GmCommands(commands.Cog):
     view.add_item(vote_button)
     await ctx.interaction.response.send_message(embed=embed, view=view)
 
+  #PingPong!
+  @commands.hybrid_command(name="ping", with_app_command=True)
+  async def ping(self, ctx:commands.Context):
+    """Check Bot's Latency
+
+    Args:
+        ctx (commands.Context): message context
+    """
+    await ctx.interaction.response.defer()
+    em = await ping_embed()
+
+    # Get the bot's current latency
+    start_time = ctx.interaction.created_at
+    message = await ctx.interaction.channel.send(embed=em)  #sending initial Embed
+    end_time = message.created_at
+    latency = (end_time - start_time).total_seconds() * 100
+    em.title = "Pong!"
+    em.color = Color.from_str(gm_color)
+    em.description = f"Latency: {latency:.2f}ms \nAPI Latency: {round(self.bot.latency*100, 2)}ms"
+    em.set_thumbnail(
+        url=
+        "https://i.pinimg.com/originals/a9/68/27/a96827aa75c09ba6c6dcf38b8f6daa90.gif"
+    )
+    await message.delete()
+    await ctx.interaction.edit_original_response(embed=em)
 
 async def setup(bot:commands.Bot):
   await bot.add_cog(GmCommands(bot))

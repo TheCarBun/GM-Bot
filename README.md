@@ -49,9 +49,11 @@ The bot has the following slash commands for now:
 - `/help`: Shows info about the bot
 - `/setup`: Setup guide for the bot
 - `/reset`: Reset stats and data
-- `/rank`: Shows your GM rank and stats
+- `/info`: Shows your GM rank and stats
 - `/leaderboard`: Displays leaderboard of top 10 members
+- `/streaks-leaderboard`: Shows top 10 with highest streaks in the server
 - `/updates`: Shows recent updates about the bot
+- `/ping`: Check bot latency
 
 To get started, simply invite the bot to your server and run the `/setup` command
 

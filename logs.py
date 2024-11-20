@@ -32,7 +32,7 @@ async def log_new_user(bot:commands.Bot, user:discord.User, guild:discord.Guild)
           count = count + 1
   
   log_channel = bot.get_channel(log_ch)
-  print("New User Added") # print to console
+  print(f"New User Added! Total users {count}") # print to console
   await log_channel.send(embed=await new_user_embed(user, guild, count))
 
 async def log_reset(bot:commands.Bot, guild:discord.Guild, user:discord.User):

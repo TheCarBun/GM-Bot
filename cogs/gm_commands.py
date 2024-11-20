@@ -1,4 +1,5 @@
-# Commands: 1. Rank | 2. Leaderboard | 3. Bot updates
+# Commands::
+# 1.Info | 2.Leaderboard | 3.Streaks-Leaderboard | 4.Bot updates | 5.Vote | 6.Ping
 
 import discord
 from discord.ext import commands
@@ -201,6 +202,59 @@ class GmCommands(commands.Cog):
     )
     await message.delete()
     await ctx.interaction.edit_original_response(embed=em)
+
+#--------- Emoji with Webhooks for non nitro users -------
+  @commands.hybrid_command(name="emoji", with_app_command=True)
+  async def emoji(self, ctx:commands.Context, emoji:str, message:str="", emoji_in_end:bool=True):
+    """
+      Sends an emoji from the server using a webhook.
+      - emoji: Name of the emoji to send.
+      - message: Optional message to send alongside the emoji.
+      - emoji_in_end: If True, appends the emoji at the end of the message.
+    """
+    emoji = emoji.lower()
+    try:
+      # Find the emoji in the server
+      for emj in ctx.guild.emojis:
+        if emj.name.lower() == emoji:
+          server_emoji = self.bot.get_emoji(emj.id)
+          break
+
+      if not server_emoji:
+        await ctx.interaction.response.send_message(
+            "❌ Emoji not found in this server.", ephemeral=True
+        )
+        return
+
+      # Get or create a webhook in the channel
+      webhooks_available = await ctx.channel.webhooks()
+      webhook = webhooks_available[0] if webhooks_available else await ctx.channel.create_webhook(name="Emoji Webhook")
+
+      # Prepare the content with emoji
+      content = f"{message}{server_emoji}" if emoji_in_end else f"{server_emoji}{message}"
+      
+      # Send the message using the webhook
+      await webhook.send(
+          content=content,
+          username=ctx.author.display_name,
+          avatar_url=ctx.author.avatar.url if ctx.author.avatar else None
+      )
+      
+      # Send a success response
+      await ctx.interaction.response.send_message(
+          "✅ Emoji sent successfully!", ephemeral=True
+      )
+    
+    except Exception as e:
+      # Handle unexpected errors
+      await ctx.interaction.response.send_message(
+          f"❌ ERROR!!", ephemeral=True
+      )
+    
+    finally:
+      # Optional: Delete webhook if it was created just for this message
+      if not webhooks_available and webhook:
+        await webhook.delete(reason="Clean up temporary webhook.")
 
 async def setup(bot:commands.Bot):
   await bot.add_cog(GmCommands(bot))

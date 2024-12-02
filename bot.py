@@ -96,28 +96,8 @@ async def on_guild_remove(guild:discord.Guild):
 
 # -------------------------------------
 
-#PingPong!
-@bot.tree.command(name="ping", description="Shows bot's latency")
-async def ping(i:discord.Interaction):
-  await i.response.defer()
-  em = await ping_embed()
-
-  # Get the bot's current latency
-  start_time = i.created_at
-  message = await i.channel.send(embed=em)  #sending initial Embed
-  end_time = message.created_at
-  latency = (end_time - start_time).total_seconds() * 100
-  em.title = "Pong!"
-  em.color = Color.from_str(gm_color)
-  em.description = f"Latency: {latency:.2f}ms \nAPI Latency: {round(bot.latency*100, 2)}ms"
-  em.set_thumbnail(
-      url=
-      "https://i.pinimg.com/originals/a9/68/27/a96827aa75c09ba6c6dcf38b8f6daa90.gif"
-  )
-  await message.delete()
-  await i.edit_original_response(embed=em)
-
 
 bot.remove_command('help') #remove help command
+
 
 bot.run(os.getenv('TOKEN'))

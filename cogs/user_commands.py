@@ -1,4 +1,5 @@
-# Commands: 1. Rank | 2. Leaderboard | 3. Bot updates
+# Commands::
+# 1.Info | 2.Leaderboard | 3.Streaks-Leaderboard | 4.Bot updates | 5.Vote | 6.Ping
 
 import discord
 from discord.ext import commands
@@ -13,7 +14,7 @@ class GmCommands(commands.Cog):
   def __init__(self, bot:commands.Bot):
     self.bot = bot
 
-# info Command
+# Info Command ----
   @commands.hybrid_command(name='info', with_app_command=True)
   async def info(self, ctx:commands.Context, user: discord.User = None):
     """Check your info or any other member's info"""
@@ -141,7 +142,7 @@ class GmCommands(commands.Cog):
 
     await ctx.interaction.response.send_message(embed=embed)  #Displays leaderboard
 
-  #Bot Updates
+  # Bot Updates ----
   @commands.hybrid_command(name="updates", with_app_command=True)
   async def updates(self, ctx:commands.Context):
     """Shows most recent bot update"""
@@ -158,6 +159,7 @@ class GmCommands(commands.Cog):
 
     await ctx.interaction.response.send_message(embed=em)
 
+  # Vote command ----
   @commands.hybrid_command(name="vote", with_app_command=True)
   async def vote(self, ctx:commands.Context):
     """Displays a link to Vote for the bot
@@ -175,6 +177,84 @@ class GmCommands(commands.Cog):
     view.add_item(vote_button)
     await ctx.interaction.response.send_message(embed=embed, view=view)
 
+  #PingPong!
+  @commands.hybrid_command(name="ping", with_app_command=True)
+  async def ping(self, ctx:commands.Context):
+    """Check Bot's Latency
+
+    Args:
+        ctx (commands.Context): message context
+    """
+    await ctx.interaction.response.defer()
+    em = await ping_embed()
+
+    # Get the bot's current latency
+    start_time = ctx.interaction.created_at
+    message = await ctx.interaction.channel.send(embed=em)  #sending initial Embed
+    end_time = message.created_at
+    latency = (end_time - start_time).total_seconds() * 100
+    em.title = "Pong!"
+    em.color = Color.from_str(gm_color)
+    em.description = f"Latency: {latency:.2f}ms \nAPI Latency: {round(self.bot.latency*100, 2)}ms"
+    em.set_thumbnail(
+        url=
+        "https://i.pinimg.com/originals/a9/68/27/a96827aa75c09ba6c6dcf38b8f6daa90.gif"
+    )
+    await message.delete()
+    await ctx.interaction.edit_original_response(embed=em)
+
+#--------- Emoji with Webhooks for non nitro users -------
+  @commands.hybrid_command(name="emoji", with_app_command=True)
+  async def emoji(self, ctx:commands.Context, emoji:str, message:str="", emoji_in_end:bool=True):
+    """
+      Sends an emoji from the server using a webhook.
+      - emoji: Name of the emoji to send.
+      - message: Optional message to send alongside the emoji.
+      - emoji_in_end: If True, appends the emoji at the end of the message.
+    """
+    emoji = emoji.lower()
+    try:
+      # Find the emoji in the server
+      for emj in ctx.guild.emojis:
+        if emj.name.lower() == emoji:
+          server_emoji = self.bot.get_emoji(emj.id)
+          break
+
+      if not server_emoji:
+        await ctx.interaction.response.send_message(
+            "❌ Emoji not found in this server.", ephemeral=True
+        )
+        return
+
+      # Get or create a webhook in the channel
+      webhooks_available = await ctx.channel.webhooks()
+      webhook = webhooks_available[0] if webhooks_available else await ctx.channel.create_webhook(name="Emoji Webhook")
+
+      # Prepare the content with emoji
+      content = f"{message}{server_emoji}" if emoji_in_end else f"{server_emoji}{message}"
+      
+      # Send the message using the webhook
+      await webhook.send(
+          content=content,
+          username=ctx.author.display_name,
+          avatar_url=ctx.author.avatar.url if ctx.author.avatar else None
+      )
+      
+      # Send a success response
+      await ctx.interaction.response.send_message(
+          "✅ Emoji sent successfully!", ephemeral=True
+      )
+    
+    except Exception as e:
+      # Handle unexpected errors
+      await ctx.interaction.response.send_message(
+          f"❌ ERROR!!", ephemeral=True
+      )
+    
+    finally:
+      # Optional: Delete webhook if it was created just for this message
+      if not webhooks_available and webhook:
+        await webhook.delete(reason="Clean up temporary webhook.")
 
 async def setup(bot:commands.Bot):
   await bot.add_cog(GmCommands(bot))

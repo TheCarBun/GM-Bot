@@ -37,7 +37,7 @@ class GmSystem(commands.Cog):
       gm_ch = self.bot.get_channel(
           gm_ch_data[gm_index]["gm_channel"])  # initializes GM Channel
 
-      if message.channel == gm_ch and "gm" in gm_msg:  # Checks channel and message
+      if message.channel == gm_ch and any(variation in gm_msg.lower() for variation in gm_variations):  # Checks channel and message
         with open("database/gm.json") as gmjson:  # Opens JSON where it stores user stats
           user_data = json.load(gmjson)
 

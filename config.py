@@ -14,3 +14,5 @@ gm_color = "#ff3396"
 # GM Time (in hours)
 gm_time = 20
 streak_time = 40
+
+gm_variations = ["gm", "good morning", "gud morning", "gd mrng"]

@@ -165,6 +165,96 @@ class MasterCommands(commands.Cog):
 
     else:
       await ctx.interaction.response.send_message("You are not allowed to use this command!")
+  
+  # Command to change GM stats of a user
+  @commands.hybrid_command(name="stat-edit", with_app_command=True)
+  async def stat_edit(self, ctx: commands.Context, user: discord.User = None, count: int = None, streak: int = None):
+    if ctx.author.id != bot_master:
+      await ctx.interaction.response.send_message("This command can only be used by the bot dev.")
+      return
+
+    # Default user to the command invoker if not provided
+    user = user or ctx.author
+    server_id = ctx.guild.id
+
+    # Return early if no count or streak is provided
+    if count is None and streak is None:
+      embed = discord.Embed(
+        title="No Parameters Provided",
+        description="You must provide at least one parameter (`count` or `streak`) to modify.",
+        color=discord.Color.red()
+      )
+      embed.set_thumbnail(url=user.avatar.url)
+      await ctx.interaction.response.send_message(embed=embed)
+      return
+
+    try:
+      embed = discord.Embed(
+        title="Updating GM Stats",
+        description=f"Processing data for {user.mention} in **{ctx.guild.name}**.",
+        color=discord.Color.blue()
+      )
+      embed.set_thumbnail(url=user.avatar.url)
+      await ctx.interaction.response.send_message(embed=embed)
+
+      # Load the JSON database
+      with open("database/gm.json", "r") as file:
+        gm_data = json.load(file)
+
+      # Search for the user in the database
+      user_data = next(
+          (data for data in gm_data if data["user_id"] == user.id and data["server_id"] == server_id), None
+      )
+
+      if user_data:
+        # Update the user's stats
+        if count is not None:
+            user_data["count"] = count
+        if streak is not None:
+            user_data["streak"] = streak
+
+        # Write the updated data back to the JSON file
+        with open("database/gm.json", "w") as file:
+            json.dump(gm_data, file, indent=4)
+
+        # Confirmation message
+        embed.title = "GM Stats Updated"
+        embed.description = f"Successfully updated stats for {user.mention}."
+        embed.add_field(name="New Stats", value=f"**Count:** {user_data['count']}\n**Streak:** {user_data['streak']}")
+        embed.color = discord.Color.green()
+      else:
+        # User not found in the database
+        embed.title = "User Not Found"
+        embed.description = f"{user.mention} does not exist in the database for this server."
+        embed.color = discord.Color.red()
+
+      # Send the final embed
+      await ctx.interaction.edit_original_response(embed=embed)
+
+    except FileNotFoundError:
+      embed = discord.Embed(
+          title="Database Error",
+          description="The database file `gm.json` could not be found.",
+          color=discord.Color.red()
+      )
+      await ctx.interaction.edit_original_response(embed=embed)
+
+    except json.JSONDecodeError:
+      embed = discord.Embed(
+          title="Database Error",
+          description="The database file `gm.json` is corrupted or contains invalid JSON.",
+          color=discord.Color.red()
+      )
+      await ctx.interaction.edit_original_response(embed=embed)
+
+    except Exception as e:
+      embed = discord.Embed(
+          title="Unexpected Error",
+          description=f"An unexpected error occurred: `{e}`",
+          color=discord.Color.red()
+      )
+      await ctx.interaction.edit_original_response(embed=embed)
+
 
 async def setup(bot:commands.Bot):
   await bot.add_cog(MasterCommands(bot))

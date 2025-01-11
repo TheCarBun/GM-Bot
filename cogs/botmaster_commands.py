@@ -165,10 +165,17 @@ class MasterCommands(commands.Cog):
 
     else:
       await ctx.interaction.response.send_message("You are not allowed to use this command!")
-  
+
   # Command to change GM stats of a user
   @commands.hybrid_command(name="stat-edit", with_app_command=True)
-  async def stat_edit(self, ctx: commands.Context, user: discord.User = None, count: int = None, streak: int = None):
+  async def stat_edit(
+    self,
+    ctx: commands.Context,
+    user: discord.User = None,
+    count: int = None,
+    streak: int = None,
+    last_used: str = None
+  ):
     if ctx.author.id != bot_master:
       await ctx.interaction.response.send_message("This command can only be used by the bot dev.")
       return
@@ -177,11 +184,11 @@ class MasterCommands(commands.Cog):
     user = user or ctx.author
     server_id = ctx.guild.id
 
-    # Return early if no count or streak is provided
-    if count is None and streak is None:
+    # Return early if no count, streak, or last_used is provided
+    if count is None and streak is None and last_used is None:
       embed = discord.Embed(
-        title="No Parameters Provided",
-        description="You must provide at least one parameter (`count` or `streak`) to modify.",
+        title="Invalid Parameters",
+        description="You must provide at least one parameter (`count`, `streak`, or `last_used`) to modify.",
         color=discord.Color.red()
       )
       embed.set_thumbnail(url=user.avatar.url)
@@ -203,24 +210,40 @@ class MasterCommands(commands.Cog):
 
       # Search for the user in the database
       user_data = next(
-          (data for data in gm_data if data["user_id"] == user.id and data["server_id"] == server_id), None
+        (data for data in gm_data if data["user_id"] == user.id and data["server_id"] == server_id), None
       )
 
       if user_data:
-        # Update the user's stats
+        # Handle count and streak updates
         if count is not None:
-            user_data["count"] = count
+          user_data["count"] = count
         if streak is not None:
-            user_data["streak"] = streak
+          user_data["streak"] = streak
+
+        # Handle last_used update
+        if last_used:
+          # Convert user-friendly input to ISO format
+          user_data["last_used"] = await process_timestamp_input(last_used)
 
         # Write the updated data back to the JSON file
         with open("database/gm.json", "w") as file:
-            json.dump(gm_data, file, indent=4)
+          json.dump(gm_data, file, indent=4)
 
         # Confirmation message
         embed.title = "GM Stats Updated"
         embed.description = f"Successfully updated stats for {user.mention}."
-        embed.add_field(name="New Stats", value=f"**Count:** {user_data['count']}\n**Streak:** {user_data['streak']}")
+        if count is not None or streak is not None:
+          embed.add_field(
+            name="New Stats",
+            value=f"**Count:** {user_data['count']}\n**Streak:** {user_data['streak']}",
+            inline=False
+          )
+        if last_used:
+          embed.add_field(
+            name="New Timestamp",
+            value=f"`{user_data['last_used']}`",
+            inline=False
+          )
         embed.color = discord.Color.green()
       else:
         # User not found in the database
@@ -233,28 +256,48 @@ class MasterCommands(commands.Cog):
 
     except FileNotFoundError:
       embed = discord.Embed(
-          title="Database Error",
-          description="The database file `gm.json` could not be found.",
-          color=discord.Color.red()
+        title="Database Error",
+        description="The database file `gm.json` could not be found.",
+        color=discord.Color.red()
       )
       await ctx.interaction.edit_original_response(embed=embed)
 
     except json.JSONDecodeError:
       embed = discord.Embed(
-          title="Database Error",
-          description="The database file `gm.json` is corrupted or contains invalid JSON.",
-          color=discord.Color.red()
+        title="Database Error",
+        description="The database file `gm.json` is corrupted or contains invalid JSON.",
+        color=discord.Color.red()
       )
       await ctx.interaction.edit_original_response(embed=embed)
 
     except Exception as e:
       embed = discord.Embed(
-          title="Unexpected Error",
-          description=f"An unexpected error occurred: `{e}`",
-          color=discord.Color.red()
+        title="Unexpected Error",
+        description=f"An unexpected error occurred: `{e}`",
+        color=discord.Color.red()
       )
       await ctx.interaction.edit_original_response(embed=embed)
 
+# Helper function to process last_used input
+async def process_timestamp_input(timestamp: str) -> str:
+    """
+    Converts user-friendly timestamp input into an ISO 8601 formatted string.
+    Accepts formats like 'YYYY-MM-DD', 'today', 'yesterday', or 'X days ago'.
+    """
+    try:
+      # Handle relative dates
+      if timestamp.lower() == "today":
+        return datetime.now().isoformat()  # UTC time
+      elif timestamp.lower() == "yesterday":
+        return (datetime.now() - timedelta(days=1)).isoformat()
+      elif "days ago" in timestamp.lower():
+        days = int(timestamp.split()[0])  # Extract the number of days
+        return (datetime.now() - timedelta(days=days)).isoformat()
+
+      # Handle specific date (YYYY-MM-DD)
+      return datetime.strptime(timestamp, "%Y-%m-%d").isoformat()
+    except Exception as e:
+      raise ValueError(f"Invalid timestamp format: {timestamp}. Use 'YYYY-MM-DD', 'today', 'yesterday', or 'X days ago'.")
 
 async def setup(bot:commands.Bot):
   await bot.add_cog(MasterCommands(bot))

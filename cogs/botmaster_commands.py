@@ -183,37 +183,35 @@ class MasterCommands(commands.Cog):
     # Default user to the command invoker if not provided
     user = user or ctx.author
     server_id = ctx.guild.id
+    embed = await embed_template()
+    embed.set_thumbnail(url=user.avatar.url)
 
     # Return early if no count, streak, or last_used is provided
     if count is None and streak is None and last_used is None:
-      embed = discord.Embed(
-        title="Invalid Parameters",
-        description="You must provide at least one parameter (`count`, `streak`, or `last_used`) to modify.",
-        color=discord.Color.red()
-      )
-      embed.set_thumbnail(url=user.avatar.url)
+      embed.title="Invalid Parameters"
+      embed.description="You must provide at least one parameter (`count`, `streak`, or `last_used`) to modify."
+      embed.color=discord.Color.red()
       await ctx.interaction.response.send_message(embed=embed)
       return
 
     try:
-      embed = discord.Embed(
-        title="Updating GM Stats",
-        description=f"Processing data for {user.mention} in **{ctx.guild.name}**.",
-        color=discord.Color.blue()
-      )
-      embed.set_thumbnail(url=user.avatar.url)
+      embed.add_field(name="Processing data", value=f"{user.mention} in **{ctx.guild.name}**.", inline=False)
       await ctx.interaction.response.send_message(embed=embed)
 
       # Load the JSON database
       with open("database/gm.json", "r") as file:
         gm_data = json.load(file)
 
+      embed.add_field(name="Searching user", value=f"{user.mention} in **{ctx.guild.name}**.", inline=False)
+      await ctx.interaction.edit_original_response(embed=embed)
       # Search for the user in the database
       user_data = next(
         (data for data in gm_data if data["user_id"] == user.id and data["server_id"] == server_id), None
       )
 
       if user_data:
+        embed.add_field(name="User Found", value=f"{user.mention} in **{ctx.guild.name}**.", inline=False)
+        await ctx.interaction.edit_original_response(embed=embed)
         # Handle count and streak updates
         if count is not None:
           user_data["count"] = count
@@ -230,8 +228,7 @@ class MasterCommands(commands.Cog):
           json.dump(gm_data, file, indent=4)
 
         # Confirmation message
-        embed.title = "GM Stats Updated"
-        embed.description = f"Successfully updated stats for {user.mention}."
+        embed.add_field(name="GM Stats Updated", value=f"Successfully updated stats for {user.mention}.", inline=False) 
         if count is not None or streak is not None:
           embed.add_field(
             name="New Stats",
